@@ -1,41 +1,51 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <script type="text/javascript" src="js/library/jszip.js"></script>
         <script type="text/javascript" src="js/library/xlsx.full.min.js"></script>
-        <script type="text/javascript" src="js/excel.function.js"></script>
+        <script type="text/javascript" src="js/function.js"></script>
 
         <title>Import and Read Excel</title>
 
         <style type="text/css">
-            body
-            {
+            body {
                 font-family: Arial;
                 font-size: 10pt;
             }
-            table
-            {
+
+            table {
                 border: 1px solid #ccc;
                 border-collapse: collapse;
             }
-            table th
-            {
+
+            table th {
                 background-color: #F7F7F7;
                 color: #333;
                 font-weight: bold;
             }
-            table th, table td
-            {
+
+            table th, table td {
                 padding: 5px;
                 border: 1px solid #ccc;
+            }
+
+            #result-container {
+                width: 95%;
+            }
+            .result {
+                width: fit-content;
+                float: left;
+                border: 1px solid black;
+                margin: 5px;
+                padding: 5px;
             }
         </style>
     </head>
     <body>
         <input type="file" id="fileUpload" />
-        <input type="button" id="upload" value="Upload" onclick="Upload()" />
+        <input type="button" id="upload" value="Upload" onclick="upload()" />
         <hr />
-        <div id="dvExcel">
+        <div id="result-container">
         </div>
     </body>
 </html>
