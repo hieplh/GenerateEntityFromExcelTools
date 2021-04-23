@@ -4,6 +4,7 @@
         <script type="text/javascript" src="js/library/jszip.js"></script>
         <script type="text/javascript" src="js/library/xlsx.full.min.js"></script>
         <script type="text/javascript" src="js/function.js"></script>
+        <script type="text/javascript" src="js/enum.js"></script>
 
         <title>Import and Read Excel</title>
 
@@ -11,6 +12,7 @@
             body {
                 font-family: Arial;
                 font-size: 10pt;
+              
             }
 
             table {
@@ -30,7 +32,7 @@
             }
 
             #result-container {
-                width: 95%;
+                width: 100%;
             }
             .result {
                 width: fit-content;
@@ -40,14 +42,31 @@
                 padding: 5px;
             }
         </style>
+
+        <script>
+            function checkedOnlyCheckbox(id) {
+                var checkbox = document.getElementsByTagName("input");
+                for (let i = 0; i < checkbox.length; i++) {
+                    if (checkbox[i].type === "checkbox") {
+                        if (checkbox[i].id !== id) {
+                            checkbox[i].checked = false;
+                        }
+                    }
+                }
+            }
+        </script>
     </head>
-    <body>
+    <body onload="init()">
         <input type="file" id="fileUpload" />
-        <input type="button" id="upload" value="Upload" onclick="upload()" />
-        <input type="checkbox" value="download java file" id="downloadFile"/>
-        <label>download java file</label>
+        <input type="button" id="upload" value="submit" onclick="upload()" />
+
+        <input type="checkbox" id="downloadFile" value="1" onclick="checkedOnlyCheckbox(this.id)" />
+        <label for="downloadFile">download java file</label>
+
+        <input type="checkbox" id="makeInsertStatement" value="2" onclick="checkedOnlyCheckbox(this.id)"/>
+        <label for="makeInsertStatement">make insert statement</label>
         <hr />
         <div id="result-container">
-        </div>
+        </div>    
     </body>
 </html>

@@ -1,45 +1,15 @@
 function upload() {
-    //Reference the FileUpload element.
-    var fileUpload = document.getElementById("fileUpload");
-    //Validate whether File is valid Excel file.
-    var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.xls|.xlsx)$/;
-    if (!regex.test(fileUpload.value.toLowerCase())) {
-        alert("Please upload a valid Excel file.");
+    var fileUpload = validateExcelFile();
+    if (fileUpload === null) {
         return;
     }
 
-    // Check browser support HTML5 or not
-    if (typeof (FileReader) == "undefined") {
-        alert("This browser does not support HTML5.\n Please update to latest browser version");
-        return;
-    }
-
-    var reader = new FileReader();
-    //For Browsers other than IE.
-    if (reader.readAsBinaryString) {
-        reader.onload = function (e) {
-            if (!isHaveMandatoryFields(e.target.result)) {
-                return;
-            }
-
-            processExcel(e.target.result);
-        };
-        reader.readAsBinaryString(fileUpload.files[0]);
-    } else {
-        //For IE Browser.
-        reader.onload = function (e) {
-            var data = "";
-            var bytes = new Uint8Array(e.target.result);
-            for (var i = 0; i < bytes.byteLength; i++) {
-                data += String.fromCharCode(bytes[i]);
-            }
-            processExcel(data);
-        };
-        reader.readAsArrayBuffer(fileUpload.files[0]);
-    }
+    let type = getType();
+    readExcelFile(fileUpload, type);
 }
 
 function download(filename, text) {
+    console.log(filename);
     var element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
     element.setAttribute('download', filename + getJavaClassType());
@@ -52,6 +22,89 @@ function download(filename, text) {
     document.body.removeChild(element);
 }
 
+function makeInsertStatement() {
+    var fileUpload = validateExcelFile();
+    if (fileUpload === null) {
+        return;
+    }
+
+    let type = getType();
+    readExcelFile(fileUpload, type);
+}
+
+function validateExcelFile() {
+    //Reference the FileUpload element.
+    var fileUpload = document.getElementById("fileUpload");
+    //Validate whether File is valid Excel file.
+    var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.xls|.xlsx)$/;
+    if (!regex.test(fileUpload.value.toLowerCase())) {
+        alert("Please upload a valid Excel file.");
+        return null;
+    }
+
+    // Check browser support HTML5 or not
+    if (typeof (FileReader) === "undefined") {
+        alert("This browser does not support HTML5.\n Please update to latest browser version");
+        return null;
+    }
+
+    return fileUpload;
+}
+
+function getType() {
+    var checkbox = document.getElementsByTagName("input");
+    for (let i = 0; i < checkbox.length; i++) {
+        if (checkbox[i].type === "checkbox") {
+            return checkbox[i].value;
+        }
+    }
+    return DEFINATION_TYPE.Generate;
+}
+
+function readExcelFile(file, type) {
+    var reader = new FileReader();
+    //For Browsers other than IE.
+    if (reader.readAsBinaryString) {
+        reader.onload = function (e) {
+//            switch (type) {
+//                case DEFINATION_TYPE.Insert:
+//                    alert("This function will be available soon!!!");
+//                    return;
+//                default :
+//                    if (!isHaveMandatoryFields(e.target.result)) {
+//                        return;
+//                    }
+//
+//                    let isDownload = type == DEFINATION_TYPE.Download ? true : false;
+//                    processExcel(e.target.result, isDownload);
+//                    break;
+//            }
+            processExcel(e.target.result, null);
+        };
+        reader.readAsBinaryString(file.files[0]);
+    } else {
+        //For IE Browser.
+        reader.onload = function (e) {
+//            switch (type) {
+//                case DEFINATION_TYPE.Insert:
+//                    alert("This function will be available soon!!!");
+//                    return;
+//                default :
+//                    var data = "";
+//                    var bytes = new Uint8Array(e.target.result);
+//                    for (var i = 0; i < bytes.byteLength; i++) {
+//                        data += String.fromCharCode(bytes[i]);
+//                    }
+//
+//                    let isDownload = type == DEFINATION_TYPE.Download ? true : false;
+//                    processExcel(data, isDownload);
+//            }
+            processExcel(e.target.result, null);
+        };
+        reader.readAsArrayBuffer(file.files[0]);
+    }
+}
+
 function makeCreateClassTemplate(tableName, data) {
     var childDiv = document.createElement('div');
     childDiv.setAttribute('class', 'result');
@@ -60,11 +113,11 @@ function makeCreateClassTemplate(tableName, data) {
     h3.innerHTML = tableName;
 
     data = data.replaceAll("\n", "<br/>");
-    var p = document.createElement('p');
-    p.innerHTML = data;
+    var pre = document.createElement('pre');
+    pre.innerHTML = data;
 
     childDiv.appendChild(h3);
-    childDiv.appendChild(p);
+    childDiv.appendChild(pre);
 
     var parentDiv = document.getElementById('result-container');
     parentDiv.appendChild(childDiv);
@@ -97,14 +150,14 @@ function isHaveMandatoryFields(data) {
     let error = "";
 
     // check key header
-    error += checkSingleMandatoryField(excel.A1.v, "Logical Table Name", "A1");
-    error += checkSingleMandatoryField(excel.B1.v, "Physical Table Name", "B1");
-    error += checkSingleMandatoryField(excel.C1.v, "Logical Column Name", "C1");
-    error += checkSingleMandatoryField(excel.D1.v, "Physical Column Name", "D1");
-    error += checkSingleMandatoryField(excel.E1.v, "Data Type", "E1");
-    error += checkSingleMandatoryField(excel.F1.v, "Prefix", "F1");
-    error += checkSingleMandatoryField(excel.G1.v, "Nullable", "G1");
-    error += checkSingleMandatoryField(excel.H1.v, "Primary Key", "H1");
+    error += checkSingleMandatoryField(excel.A1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_TABLE, "A1");
+    error += checkSingleMandatoryField(excel.B1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS, "B1");
+    error += checkSingleMandatoryField(excel.C1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_COLUMN, "C1");
+    error += checkSingleMandatoryField(excel.D1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_ATTRIBUTE, "D1");
+    error += checkSingleMandatoryField(excel.E1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE, "E1");
+    error += checkSingleMandatoryField(excel.F1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PREFIX, "F1");
+    error += checkSingleMandatoryField(excel.G1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE, "G1");
+    error += checkSingleMandatoryField(excel.H1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY, "H1");
 
     if (error) {
         alert(error);
@@ -114,7 +167,7 @@ function isHaveMandatoryFields(data) {
     return true;
 }
 
-function processExcel(data) {
+function processExcel(data, isDownload) {
     //Read all rows from First Sheet into an JSON array.
     let excelRows = XLSX.utils.sheet_to_row_object_array(importExcel(data));
     let startPos = -1;
@@ -136,56 +189,59 @@ function processExcel(data) {
 
                 let isDownload = document.getElementById("downloadFile");
                 if (isDownload.checked) {
-                    download(excelRows[startPos]["Physical Table Name"], result);
+                    download(splitandCamelCaseString(excelRows[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/), result);
                 }
 
-                makeCreateClassTemplate(excelRows[startPos]["Physical Table Name"], result);
+                makeCreateClassTemplate(splitandCamelCaseString(excelRows[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/), result);
                 console.log(result + "\n");
 
                 startPos = endPos;
             }
         }
     }
-
-//    var dvExcel = document.getElementById("dvExcel");
-//    dvExcel.innerHTML = "";
-//    dvExcel.appendChild(table);
 }
 
 function isEndTable(data, startPos, endPos) {
-    let startNameTable = data[startPos]["Physical Table Name"];
-    let endNameTable = data.length - 1 !== endPos ? data[endPos]["Physical Table Name"] : "";
+    let startNameTable = data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS];
+    let endNameTable = data.length - 1 !== endPos ? data[endPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS] : "";
     return startNameTable !== endNameTable;
 }
 
 function makeRawClass(data, startPos, endPos, isTheLastTable) {
     let result = "";
     result += getCommonImport() + getNewLine();
+    result += getCommentJapanese(
+            splitandCamelCaseString(data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/),
+            data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_TABLE],
+            data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.AUTHOR],
+            data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.COMMENT]);
     result += getInitAnnotationClass();
-    result += getTableAnnotation() + getQuotes() + data[startPos]["Logical Table Name"] + getQuotes();
+    result += getTableAnnotation() + getQuotes() + data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_TABLE] + getQuotes();
     result += getSchemaTable() + getRightParentheses();
     result += getNewLine();
     result += getInitClass();
-    result += splitandCamelCaseString(data[startPos]["Physical Table Name"], "", /[_ ]+/);
+    result += splitandCamelCaseString(data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/);
     result += getImplSeriable();
     result += " " + getLeftBraces();
     result += getNewLine() + getNewLine();
 
     let lengh = isTheLastTable ? endPos + 1 : endPos;
     for (var i = startPos; i < lengh; i++) {
-        if (data[i]["Primary Key"]) {
-            if (data[i]["Primary Key"].toString().toLowerCase() === "true" ||
-                    data[i]["Primary Key"] === 1 || data[i]["Primary Key"].toString().toLowerCase() === "yes") {
+        if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY]) {
+            if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY].toString().toLowerCase() === "true" ||
+                    data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY] === 1 ||
+                    data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY].toString().toLowerCase() === "yes") {
                 result += "@Id";
                 result += getNewLine();
             }
         }
 
         result += getColumnAnnotation();
-        result += getQuotes() + data[i]["Logical Column Name"] + getQuotes();
-        if (data[i]["Nullable"]) {
-            if (data[i]["Nullable"].toString().toLowerCase() === "true" ||
-                    data[i]["Nullable"] === 1 || data[i]["Nullable"].toString().toLowerCase() === "yes") {
+        result += getQuotes() + data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_COLUMN] + getQuotes();
+        if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE]) {
+            if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE].toString().toLowerCase() === "true" ||
+                    data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE] === 1 ||
+                    data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE].toString().toLowerCase() === "yes") {
                 result += ", nullable = true";
             }
         }
@@ -193,8 +249,11 @@ function makeRawClass(data, startPos, endPos, isTheLastTable) {
         result += getNewLine();
 
         result += getModifier();
-        result += data[i]["Data Type"] + " ";
-        result += splitandCamelCaseString(data[i]["Physical Column Name"], data[i]["Prefix"], /[_ ]+/);
+        result += data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE] + " ";
+        result += splitandCamelCaseString(
+                data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_ATTRIBUTE],
+                data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PREFIX],
+                /[_ ]+/);
         result += getSemicolon();
         result += getNewLine();
         result += getNewLine();
@@ -283,6 +342,30 @@ function getJavaClassType() {
     return ".java";
 }
 
+function getImplementOfByJapanese() {
+    return "の実装";
+}
+
+function getAddCommentByJapanses() {
+    return "コメントを追記する";
+}
+
+function getCommentJapanese(javaClass, dbTable, author, comment) {
+    let result = "/**\n" +
+            "*\n" +
+            "* " + javaClass + " " + getImplementOfByJapanese() + "<br/>\n" +
+            "* " + dbTable + "\n" +
+            "* <p>\n" +
+            "* " + getAddCommentByJapanses() + "\n";
+    if (comment) {
+        result += "* " + comment + "\n";
+    }
+    result += "* </p>\n" +
+            "* @author " + author + "\n" +
+            "*/\n";
+    return  result;
+}
+
 function upperCaseString(value) {
     return value.substring(0, 1).toUpperCase() + value.substring(1);
 }
@@ -296,7 +379,6 @@ function checkPrefix(value, prefix) {
 
 function splitandCamelCaseString(value, prefix, delimiter) {
     let arr = checkPrefix(value.split(delimiter), prefix);
-    console.log(arr);
     let result = "";
     let isFirstLetter = true;
     for (let i = 0; i < arr.length; i++) {
