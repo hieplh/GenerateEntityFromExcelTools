@@ -13,12 +13,9 @@ function download(filename, text) {
     var element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
     element.setAttribute('download', filename + getJavaClassType());
-
     element.style.display = 'none';
     document.body.appendChild(element);
-
     element.click();
-
     document.body.removeChild(element);
 }
 
@@ -33,7 +30,7 @@ function makeInsertStatement() {
 }
 
 function validateExcelFile() {
-    //Reference the FileUpload element.
+//Reference the FileUpload element.
     var fileUpload = document.getElementById("fileUpload");
     //Validate whether File is valid Excel file.
     var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.xls|.xlsx)$/;
@@ -42,7 +39,7 @@ function validateExcelFile() {
         return null;
     }
 
-    // Check browser support HTML5 or not
+// Check browser support HTML5 or not
     if (typeof (FileReader) === "undefined") {
         alert("This browser does not support HTML5.\n Please update to latest browser version");
         return null;
@@ -83,7 +80,7 @@ function readExcelFile(file, type) {
         };
         reader.readAsBinaryString(file.files[0]);
     } else {
-        //For IE Browser.
+//For IE Browser.
         reader.onload = function (e) {
 //            switch (type) {
 //                case DEFINATION_TYPE.Insert:
@@ -108,29 +105,30 @@ function readExcelFile(file, type) {
 function makeCreateClassTemplate(tableName, data) {
     var childDiv = document.createElement('div');
     childDiv.setAttribute('class', 'result');
-
     var h3 = document.createElement('h3');
     h3.innerHTML = tableName;
-
     data = data.replaceAll("\n", "<br/>");
     var pre = document.createElement('pre');
     pre.innerHTML = data;
-
     childDiv.appendChild(h3);
     childDiv.appendChild(pre);
-
     var parentDiv = document.getElementById('result-container');
     parentDiv.appendChild(childDiv);
 }
 
-function importExcel(data) {
-    //Read the Excel File data.
+function importExcel(data, sheetname) {
+//Read the Excel File data.
     let workbook = XLSX.read(data, {
         type: 'binary'
     });
     //Fetch the name of First Sheet.
-    let firstSheet = workbook.SheetNames[0];
-    return workbook.Sheets[firstSheet];
+
+    // get sheet name of gen entity
+    let result = sheetname;
+    if (result === "undefined") {
+        result = workbook.SheetNames[0];
+    }
+    return workbook.Sheets[result];
 }
 
 function checkSingleMandatoryField(data, field, pos) {
@@ -148,17 +146,18 @@ function checkSingleMandatoryField(data, field, pos) {
 function isHaveMandatoryFields(data) {
     let excel = importExcel(data);
     let error = "";
-
     // check key header
     error += checkSingleMandatoryField(excel.A1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_TABLE, "A1");
-    error += checkSingleMandatoryField(excel.B1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS, "B1");
-    error += checkSingleMandatoryField(excel.C1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_COLUMN, "C1");
-    error += checkSingleMandatoryField(excel.D1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_ATTRIBUTE, "D1");
-    error += checkSingleMandatoryField(excel.E1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE, "E1");
-    error += checkSingleMandatoryField(excel.F1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PREFIX, "F1");
-    error += checkSingleMandatoryField(excel.G1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE, "G1");
-    error += checkSingleMandatoryField(excel.H1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY, "H1");
-
+    error += checkSingleMandatoryField(excel.B1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_COLUMN, "B1");
+    error += checkSingleMandatoryField(excel.B1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PACKAGE, "C1");
+    error += checkSingleMandatoryField(excel.C1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS, "D1");
+    error += checkSingleMandatoryField(excel.D1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_ATTRIBUTE, "E1");
+    error += checkSingleMandatoryField(excel.E1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE, "F1");
+    error += checkSingleMandatoryField(excel.F1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PREFIX, "G1");
+    error += checkSingleMandatoryField(excel.G1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE, "H1");
+    error += checkSingleMandatoryField(excel.H1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY, "I1");
+    error += checkSingleMandatoryField(excel.H1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.AUTHOR, "J1");
+    error += checkSingleMandatoryField(excel.H1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.COMMENT, "K1");
     if (error) {
         alert(error);
         return false;
@@ -168,13 +167,12 @@ function isHaveMandatoryFields(data) {
 }
 
 function processExcel(data, isDownload) {
-    //Read all rows from First Sheet into an JSON array.
-    let excelRows = XLSX.utils.sheet_to_row_object_array(importExcel(data));
+//Read all rows from First Sheet into an JSON array.
+    let excelRows = XLSX.utils.sheet_to_row_object_array(importExcel(data, DEFINATION_SHEET_NAME.GEN_ENTITY));
     let startPos = -1;
     let endPos = -1;
     let isTheLastTable = false;
     let result;
-
     //Add the data rows from Excel file.
     for (let i = 0; i < excelRows.length; i++) {
         if (startPos === -1 && endPos === -1) {
@@ -186,14 +184,13 @@ function processExcel(data, isDownload) {
                     isTheLastTable = true;
                 }
                 result = makeRawClass(excelRows, startPos, endPos, isTheLastTable);
-
                 let isDownload = document.getElementById("downloadFile");
                 if (isDownload.checked) {
                     download(splitandCamelCaseString(excelRows[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/), result);
                 }
 
-                makeCreateClassTemplate(splitandCamelCaseString(excelRows[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/), result);
-                console.log(result + "\n");
+//                makeCreateClassTemplate(splitandCamelCaseString(excelRows[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/), result);
+//                console.log(result + "\n");
 
                 startPos = endPos;
             }
@@ -209,7 +206,10 @@ function isEndTable(data, startPos, endPos) {
 
 function makeRawClass(data, startPos, endPos, isTheLastTable) {
     let result = "";
-    result += getCommonImport() + getNewLine();
+    result += getPackage(data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PACKAGE]);
+    result += getNewLine();
+    result += getCommonImport();
+    result += getNewLine();
     result += getCommentJapanese(
             splitandCamelCaseString(data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/),
             data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_TABLE],
@@ -224,18 +224,19 @@ function makeRawClass(data, startPos, endPos, isTheLastTable) {
     result += getImplSeriable();
     result += " " + getLeftBraces();
     result += getNewLine() + getNewLine();
-
     let lengh = isTheLastTable ? endPos + 1 : endPos;
     for (var i = startPos; i < lengh; i++) {
         if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY]) {
             if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY].toString().toLowerCase() === "true" ||
                     data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY] === 1 ||
                     data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY].toString().toLowerCase() === "yes") {
+                result += getTab();
                 result += "@Id";
                 result += getNewLine();
             }
         }
 
+        result += getTab();
         result += getColumnAnnotation();
         result += getQuotes() + data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_COLUMN] + getQuotes();
         if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE]) {
@@ -247,9 +248,12 @@ function makeRawClass(data, startPos, endPos, isTheLastTable) {
         }
         result += getRightParentheses();
         result += getNewLine();
-
+        result += getTab();
         result += getModifier();
-        result += data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE] + " ";
+
+        let javaType = data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE] !== "undefined" ?
+                data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE] : "String";
+        result += javaType + " ";
         result += splitandCamelCaseString(
                 data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_ATTRIBUTE],
                 data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PREFIX],
@@ -293,6 +297,14 @@ function getComma() {
 
 function getNewLine() {
     return "\n";
+}
+
+function getTab() {
+    return "\t";
+}
+
+function getPackage(packageName) {
+    return "package " + packageName + getSemicolon() + "\n";
 }
 
 function getCommonImport() {

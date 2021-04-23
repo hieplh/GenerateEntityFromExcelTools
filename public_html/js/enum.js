@@ -9,6 +9,7 @@ const DEFINATION_TYPE = {
 const DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS = {
     "DB_TABLE": "Database Table Name",
     "DB_COLUMN": "Field Column Name",
+    "PACKAGE": "Package",
     "JAVA_CLASS": "Java Class Name",
     "JAVA_ATTRIBUTE": "Java Attribute Name",
     "JAVA_TYPE": "Data Type",
@@ -17,6 +18,10 @@ const DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS = {
     "PRIMARY_KEY": "Primary Key",
     "AUTHOR": "Author",
     "COMMENT": "Comment"
+};
+
+const DEFINATION_SHEET_NAME = {
+    "GEN_ENTITY": "GenEntity"
 };
 
 function init() {
