@@ -15,17 +15,26 @@ function compressFile(filename, data) {
 }
 
 function download(filename, typeArchive) {
-//    var element = document.createElement('a');
-//    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-//    element.setAttribute('download', filename + getJavaClassType());
-//    element.style.display = 'none';
-//    document.body.appendChild(element);
-//    element.click();
-//    document.body.removeChild(element);
+    let size = 0;
+    archive.forEach((file) => size += file ? 1 : 0);
+
+    let output = filename;
+    if (size === 1) {
+//        var element = document.createElement('a');
+//        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(archive.files[0]));
+//        element.setAttribute('download', filename + getJavaClassType());
+//        element.style.display = 'none';
+//        document.body.appendChild(element);
+//        element.click();
+//        document.body.removeChild(element);
+        output += getJavaClassType();
+    } else {
+        output += typeArchive;
+    }
 
     archive.generateAsync({type: "blob"})
             .then(function (content) {
-                saveAs(content, filename + "." + typeArchive);
+                saveAs(content, output);
             });
 }
 
@@ -271,7 +280,7 @@ function processExcel(data, isDownload) {
     }
 
     if (isDownload) {
-        download("Generated Entity", "zip");
+        download("Generated Entity", ".zip");
     }
 }
 
