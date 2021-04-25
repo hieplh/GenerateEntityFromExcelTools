@@ -184,20 +184,6 @@ function readExcelFile(file, type) {
     }
 }
 
-function makeCreateClassTemplate(tableName, data) {
-    var childDiv = document.createElement('div');
-    childDiv.setAttribute('class', 'result');
-    var h3 = document.createElement('h3');
-    h3.innerHTML = tableName;
-    data = data.replaceAll("\n", "<br/>");
-    var pre = document.createElement('pre');
-    pre.innerHTML = data;
-    childDiv.appendChild(h3);
-    childDiv.appendChild(pre);
-    var parentDiv = document.getElementById('result-container');
-    parentDiv.appendChild(childDiv);
-}
-
 function importExcel(data, sheetname) {
 //Read the Excel File data.
     let workbook = XLSX.read(data, {
@@ -248,46 +234,38 @@ function isHaveMandatoryFields(data) {
     return true;
 }
 
-function processExcel(data, isDownload) {
-    //Read all rows from First Sheet into an JSON array.
-    let excelRows = XLSX.utils.sheet_to_row_object_array(importExcel(data, DEFINATION_SHEET_NAME.GEN_ENTITY));
-    let startPos = -1;
-    let endPos = -1;
-    let isTheLastTable = false;
-    let result;
-    //Add the data rows from Excel file.
-    for (let i = 0; i < excelRows.length; i++) {
-        if (startPos === -1 && endPos === -1) {
-            startPos = i;
-        } else {
-            endPos = i;
-            if (isEndTable(excelRows, startPos, endPos)) {
-                if (excelRows.length - 1 === endPos) {
-                    isTheLastTable = true;
-                }
-                result = makeRawClass(excelRows, startPos, endPos, isTheLastTable);
-                //let isDownload = document.getElementById("downloadFile");
-                if (isDownload) {
-                    compressFile(splitandCamelCaseString(excelRows[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/), result);
-                }
-
-                makeCreateClassTemplate(splitandCamelCaseString(excelRows[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/), result);
-//                console.log(result + "\n");
-
-                startPos = endPos;
-            }
-        }
-    }
-
-    if (isDownload) {
-        download("Generated Entity", ".zip");
-    }
-}
-
 function isEndTable(data, startPos, endPos) {
     let startNameTable = data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS];
     let endNameTable = data.length - 1 !== endPos ? data[endPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS] : "";
     return startNameTable !== endNameTable;
+}
+
+function isPrimaryKey(data, startPos, endPos, isTheLastTable) {
+    let lengh = isTheLastTable ? endPos + 1 : endPos;
+    for (var i = startPos; i < lengh; i++) {
+        if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY]) {
+            if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY].toString().toLowerCase() === "true" ||
+                    data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY] === 1 ||
+                    data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY].toString().toLowerCase() === "yes") {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function makeCreateClassTemplate(tableName, data) {
+    var childDiv = document.createElement('div');
+    childDiv.setAttribute('class', 'result');
+    var h3 = document.createElement('h3');
+    h3.innerHTML = tableName;
+    data = data.replaceAll("\n", "<br/>");
+    var pre = document.createElement('pre');
+    pre.innerHTML = data;
+    childDiv.appendChild(h3);
+    childDiv.appendChild(pre);
+    var parentDiv = document.getElementById('result-container');
+    parentDiv.appendChild(childDiv);
 }
 
 function makeRawClass(data, startPos, endPos, isTheLastTable) {
@@ -362,6 +340,120 @@ function makeRawClass(data, startPos, endPos, isTheLastTable) {
     classContent += getRightBraces();
 
     return package + "\n" + importLib + "\n" + comment + annotation + classContent;
+}
+
+function makeRawKeyClass(data, indexes, isTheLastTable) {
+    let package = "";
+    let importLib = "";
+    let comment = "";
+    let annotation = "";
+    let classContent = "";
+
+    package = getPackage(data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PACKAGE]);
+
+    importLib = getCommonImport() + getNewLine();
+
+    comment = getCommentJapanese(
+            splitandCamelCaseString(data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/),
+            data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_TABLE],
+            data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.AUTHOR],
+            data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.COMMENT]);
+
+    annotation = getInitAnnotationClass();
+    annotation += getTableAnnotation() + getQuotes() + data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_TABLE] + getQuotes();
+    annotation += getSchemaTable() + getRightParentheses();
+    annotation += getNewLine();
+
+    classContent += getInitClass();
+    classContent += splitandCamelCaseString(data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/);
+    classContent += getImplSeriable();
+    classContent += " " + getLeftBraces();
+    classContent += getNewLine() + getNewLine();
+
+    let lengh = isTheLastTable ? endPos + 1 : endPos;
+    for (var i = startPos; i < lengh; i++) {
+        if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY]) {
+            if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY].toString().toLowerCase() === "true" ||
+                    data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY] === 1 ||
+                    data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY].toString().toLowerCase() === "yes") {
+                classContent += getTab();
+                classContent += "@Id";
+                classContent += getNewLine();
+            }
+        }
+
+        classContent += getTab();
+        classContent += getColumnAnnotation();
+        classContent += getQuotes() + data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_COLUMN] + getQuotes();
+        if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE]) {
+            if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE].toString().toLowerCase() === "true" ||
+                    data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE] === 1 ||
+                    data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE].toString().toLowerCase() === "yes") {
+                classContent += ", nullable = true";
+            }
+        }
+        classContent += getRightParentheses();
+        classContent += getNewLine();
+        classContent += getTab();
+        classContent += getModifier();
+
+        let javaType = data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE] !== "undefined" ?
+                data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE] : "String";
+        javaType = getTypeJava(javaType);
+        importLib += addAdditionalImport(javaType);
+
+        classContent += javaType + " ";
+        classContent += splitandCamelCaseString(
+                data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_ATTRIBUTE],
+                data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PREFIX],
+                /[_ ]+/);
+        classContent += getSemicolon();
+        classContent += getNewLine();
+        classContent += getNewLine();
+    }
+    classContent += getRightBraces();
+
+    indexes.forEach(function (index) {
+
+    });
+
+    return package + "\n" + importLib + "\n" + comment + annotation + classContent;
+}
+
+function processExcel(data, isDownload) {
+    //Read all rows from First Sheet into an JSON array.
+    let excelRows = XLSX.utils.sheet_to_row_object_array(importExcel(data, DEFINATION_SHEET_NAME.GEN_ENTITY));
+    let startPos = -1;
+    let endPos = -1;
+    let isTheLastTable = false;
+    let result;
+    //Add the data rows from Excel file.
+    for (let i = 0; i < excelRows.length; i++) {
+        if (startPos === -1 && endPos === -1) {
+            startPos = i;
+        } else {
+            endPos = i;
+            if (isEndTable(excelRows, startPos, endPos)) {
+                if (excelRows.length - 1 === endPos) {
+                    isTheLastTable = true;
+                }
+                result = makeRawClass(excelRows, startPos, endPos, isTheLastTable);
+                //let isDownload = document.getElementById("downloadFile");
+                if (isDownload) {
+                    compressFile(splitandCamelCaseString(excelRows[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/), result);
+                }
+
+                //makeCreateClassTemplate(splitandCamelCaseString(excelRows[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/), result);
+//                console.log(result + "\n");
+
+                startPos = endPos;
+            }
+        }
+    }
+
+    if (isDownload) {
+        download("Generated Entity", ".zip");
+    }
 }
 
 function getLeftParentheses() {
