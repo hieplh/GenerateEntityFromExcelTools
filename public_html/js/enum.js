@@ -1,3 +1,6 @@
+var javaType = [];
+var javaLib = [];
+
 const DEFINATION_TYPE = {
     "Generate": 0,
     "Download": 1,
@@ -17,11 +20,15 @@ const DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS = {
     "NULLABLE": "Nullable",
     "PRIMARY_KEY": "Primary Key",
     "AUTHOR": "Author",
-    "COMMENT": "Comment"
+    "COMMENT": "Comment",
+    "FROM": "From",
+    "TO": "To",
+    "LIBRARY": "Library"
 };
 
 const DEFINATION_SHEET_NAME = {
-    "GEN_ENTITY": "GenEntity"
+    "GEN_ENTITY": "GenEntity",
+    "JAVA_TYPE_MAPPING": "DataTypeMapping"
 };
 
 function init() {
