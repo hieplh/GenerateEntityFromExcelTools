@@ -7,7 +7,8 @@ function upload() {
     }
 
     let type = getTypeCheckbox();
-    readExcelFile(fileUpload, type);
+    let optional = getTypeOptional();
+    readExcelFile(fileUpload, type, optional);
 }
 
 function compressFile(filename, data) {
@@ -61,6 +62,17 @@ function initJavaTypeMapping(data) {
     }
 }
 
+function initJavaPrefixMapping(data) {
+    let excelRows = XLSX.utils.sheet_to_row_object_array(importExcel(data, DEFINATION_SHEET_NAME.JAVA_TYPE_MAPPING));
+
+    javaPrefix = [];
+    for (let i = 0; i < excelRows.length; i++) {
+        if (excelRows[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE]) {
+            javaPrefix[excelRows[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE]] = excelRows[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PREFIX];
+        }
+    }
+}
+
 function validateJavaType(data) {
     let excel = importExcel(data, DEFINATION_SHEET_NAME.JAVA_TYPE_MAPPING);
     let error = "";
@@ -96,7 +108,7 @@ function validateExcelFile() {
 }
 
 function getTypeCheckbox() {
-    var checkbox = document.getElementsByTagName("input");
+    var checkbox = document.getElementsByClassName("main_function");
     for (let i = 0; i < checkbox.length; i++) {
         if (checkbox[i].type === "checkbox") {
             if (checkbox[i].checked) {
@@ -105,6 +117,26 @@ function getTypeCheckbox() {
         }
     }
     return DEFINATION_TYPE.Generate;
+}
+
+function getTypeOptional() {
+    let result = [];
+    let count = -1;
+    let checkbox = document.getElementsByClassName("sub_function");
+    for (let i = 0; i < checkbox.length; i++) {
+        if (checkbox[i].checked) {
+            result[++count] = checkbox[i].value;
+        }
+    }
+    return result;
+}
+
+function getTruncatedNum(data) {
+    let excelRows = XLSX.utils.sheet_to_row_object_array(importExcel(data, DEFINATION_SHEET_NAME.JAVA_TYPE_MAPPING));
+
+    if (excelRows[0][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.TRUNCATED]) {
+        truncated = excelRows[0][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.TRUNCATED];
+    }
 }
 
 function addAdditionalImport(typeJava) {
@@ -129,7 +161,7 @@ function getTypeJava(inputType) {
     return output;
 }
 
-function readExcelFile(file, type) {
+function readExcelFile(file, type, optional) {
     var reader = new FileReader();
     //For Browsers other than IE.
     if (reader.readAsBinaryString) {
@@ -147,8 +179,11 @@ function readExcelFile(file, type) {
                     }
 
                     initJavaTypeMapping(e.target.result);
+                    initJavaPrefixMapping(e.target.result);
+                    getTruncatedNum(e.target.result);
+                    console.log(truncated);
                     let isDownload = type == DEFINATION_TYPE.Download ? true : false;
-                    processExcel(e.target.result, isDownload);
+                    processExcel(e.target.result, isDownload, optional);
                     break;
             }
         };
@@ -175,6 +210,7 @@ function readExcelFile(file, type) {
                     }
 
                     initJavaTypeMapping(e.target.result);
+                    initJavaPrefixMapping(e.target.result);
                     let isDownload = type == DEFINATION_TYPE.Download ? true : false;
                     processExcel(data, isDownload);
                     break;
@@ -241,17 +277,19 @@ function isEndTable(data, startPos, endPos) {
 }
 
 function isPrimaryKey(data, startPos, endPos, isTheLastTable) {
+    let indexes = [];
+    let count = -1;
     let lengh = isTheLastTable ? endPos + 1 : endPos;
     for (var i = startPos; i < lengh; i++) {
         if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY]) {
             if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY].toString().toLowerCase() === "true" ||
                     data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY] === 1 ||
                     data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY].toString().toLowerCase() === "yes") {
-                return true;
+                indexes[++count] = i;
             }
         }
     }
-    return false;
+    return indexes;
 }
 
 function makeCreateClassTemplate(tableName, data) {
@@ -290,7 +328,7 @@ function makeRawClass(data, startPos, endPos, isTheLastTable) {
     annotation += getSchemaTable() + getRightParentheses();
     annotation += getNewLine();
 
-    classContent += getInitClass();
+    classContent += getClassName();
     classContent += splitandCamelCaseString(data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/);
     classContent += getImplSeriable();
     classContent += " " + getLeftBraces();
@@ -342,85 +380,69 @@ function makeRawClass(data, startPos, endPos, isTheLastTable) {
     return package + "\n" + importLib + "\n" + comment + annotation + classContent;
 }
 
-function makeRawKeyClass(data, indexes, isTheLastTable) {
+function makeRawKeyClass(data, indexes, optional) {
     let package = "";
     let importLib = "";
     let comment = "";
     let annotation = "";
     let classContent = "";
 
-    package = getPackage(data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PACKAGE]);
+    package = getPackageKey(data[indexes[0]][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PACKAGE_KEY],
+            data[indexes[0]][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PACKAGE] + ".key");
 
     importLib = getCommonImport() + getNewLine();
 
     comment = getCommentJapanese(
-            splitandCamelCaseString(data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/),
-            data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_TABLE],
-            data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.AUTHOR],
-            data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.COMMENT]);
+            splitandCamelCaseString(data[indexes[0]][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/),
+            data[indexes[0]][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_TABLE],
+            data[indexes[0]][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.AUTHOR],
+            data[indexes[0]][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.COMMENT]);
 
     annotation = getInitAnnotationClass();
-    annotation += getTableAnnotation() + getQuotes() + data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_TABLE] + getQuotes();
-    annotation += getSchemaTable() + getRightParentheses();
+    annotation += getTableAnnotation(data[indexes[0]][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_TABLE], "public");
     annotation += getNewLine();
 
-    classContent += getInitClass();
-    classContent += splitandCamelCaseString(data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/);
-    classContent += getImplSeriable();
+    classContent += getClassName(splitandCamelCaseString(data[indexes[0]][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/),
+            getImplSeriable());
     classContent += " " + getLeftBraces();
     classContent += getNewLine() + getNewLine();
 
-    let lengh = isTheLastTable ? endPos + 1 : endPos;
-    for (var i = startPos; i < lengh; i++) {
-        if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY]) {
-            if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY].toString().toLowerCase() === "true" ||
-                    data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY] === 1 ||
-                    data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY].toString().toLowerCase() === "yes") {
-                classContent += getTab();
-                classContent += "@Id";
-                classContent += getNewLine();
-            }
-        }
-
-        classContent += getTab();
-        classContent += getColumnAnnotation();
-        classContent += getQuotes() + data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_COLUMN] + getQuotes();
-        if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE]) {
-            if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE].toString().toLowerCase() === "true" ||
-                    data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE] === 1 ||
-                    data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE].toString().toLowerCase() === "yes") {
-                classContent += ", nullable = true";
-            }
-        }
-        classContent += getRightParentheses();
+    classContent += getTab();
+    classContent += getSerialVersionUID();
+    classContent += getNewLine() + getNewLine();
+    indexes.forEach(function (index) {
         classContent += getNewLine();
         classContent += getTab();
         classContent += getModifier();
 
-        let javaType = data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE] !== "undefined" ?
-                data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE] : "String";
+        let javaType = data[index][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE] !== "undefined" ?
+                data[index][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE] : "String";
         javaType = getTypeJava(javaType);
         importLib += addAdditionalImport(javaType);
 
         classContent += javaType + " ";
-        classContent += splitandCamelCaseString(
-                data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_ATTRIBUTE],
-                data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PREFIX],
-                /[_ ]+/);
+        if (isFoundValueTypeOptional(optional, DEFINATION_TYPE_SUB.AUTO_PREFIX)) {
+            classContent += splitandCamelCaseString(
+                    data[index][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_ATTRIBUTE],
+                    javaPrefix[javaType],
+                    /[_ ]+/);
+        } else {
+            classContent += splitandCamelCaseString(
+                    data[index][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_ATTRIBUTE],
+                    data[index][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PREFIX],
+                    /[_ ]+/);
+        }
+
         classContent += getSemicolon();
         classContent += getNewLine();
         classContent += getNewLine();
-    }
-    classContent += getRightBraces();
-
-    indexes.forEach(function (index) {
-
     });
+    classContent += getRightBraces();
 
     return package + "\n" + importLib + "\n" + comment + annotation + classContent;
 }
 
-function processExcel(data, isDownload) {
+function processExcel(data, isDownload, optional) {
     //Read all rows from First Sheet into an JSON array.
     let excelRows = XLSX.utils.sheet_to_row_object_array(importExcel(data, DEFINATION_SHEET_NAME.GEN_ENTITY));
     let startPos = -1;
@@ -437,13 +459,15 @@ function processExcel(data, isDownload) {
                 if (excelRows.length - 1 === endPos) {
                     isTheLastTable = true;
                 }
-                result = makeRawClass(excelRows, startPos, endPos, isTheLastTable);
+                //result = makeRawClass(excelRows, startPos, endPos, isTheLastTable);
+                let indexes = isPrimaryKey(excelRows, startPos, endPos, isTheLastTable);
+                result = makeRawKeyClass(excelRows, indexes, optional);
                 //let isDownload = document.getElementById("downloadFile");
                 if (isDownload) {
                     compressFile(splitandCamelCaseString(excelRows[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/), result);
                 }
 
-                //makeCreateClassTemplate(splitandCamelCaseString(excelRows[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/), result);
+                makeCreateClassTemplate(splitandCamelCaseString(excelRows[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/), result);
 //                console.log(result + "\n");
 
                 startPos = endPos;
@@ -496,6 +520,14 @@ function getPackage(packageName) {
     return "package " + packageName + getSemicolon() + "\n";
 }
 
+function getPackageKey(packageName, defaultPackageName) {
+    if (packageName) {
+        return getPackage(packageName);
+    } else {
+        return getPackage(defaultPackageName);
+    }
+}
+
 function getCommonImport() {
     return "import javax.persistence.Column;\n" +
             "import javax.persistence.Entity;\n" +
@@ -507,8 +539,12 @@ function getCommonImport() {
             "import lombok.NoArgsConstructor;\n";
 }
 
-function getInitClass() {
-    return "public class ";
+function getClassName(className, seriable) {
+    let result = "public class " + className;
+    if (seriable !== "underfined" || seriable !== null) {
+        result += seriable;
+    }
+    return result;
 }
 
 function getModifier() {
@@ -523,12 +559,17 @@ function getInitAnnotationClass() {
             "@NoArgsConstructor\n";
 }
 
-function getSchemaTable() {
-    return getComma() + " schema = " + getQuotes() + "public" + getQuotes();
+function getSchemaTable(schemaName) {
+    return getComma() + " schema = " + getQuotes() + schemaName + getQuotes();
 }
 
-function getTableAnnotation() {
-    return "@Table(name = ";
+function getTableAnnotation(tableName, schemaName) {
+    let result = "@Table(name = " + getQuotes() + tableName + getQuotes();
+    if (schemaName !== "underfined" || schemaName !== null) {
+        result += getSchemaTable(schemaName);
+    }
+    result += getRightParentheses();
+    return result;
 }
 
 function getColumnAnnotation() {
@@ -629,4 +670,17 @@ function saveAs(blob, filename) {
         }
         URL.revokeObjectURL(elem.href);
     }
+}
+
+function getSerialVersionUID() {
+    return "private static final long serialVersionUID = 1L;";
+}
+
+function isFoundValueTypeOptional(data, key) {
+    for (let i = 0; i < data.length; i++) {
+        if (key === parseInt(data[i])) {
+            return true;
+        }
+    }
+    return false;
 }
