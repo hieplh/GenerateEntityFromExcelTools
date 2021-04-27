@@ -8,65 +8,72 @@
         <script type="text/javascript" src="js/enum.js"></script>
 
         <title>Import and Read Excel</title>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 
-            <style type="text/css">
-                body {
-                    font-family: Arial;
-                    font-size: 10pt;
+        <style type="text/css">
+            body {
+                font-family: Arial;
+                font-size: 10pt;
 
-                }
+            }
 
-                table {
-                    border: 1px solid #ccc;
-                    border-collapse: collapse;
-                }
+            table {
+                border: 1px solid #ccc;
+                border-collapse: collapse;
+            }
 
-                table th {
-                    background-color: #F7F7F7;
-                    color: #333;
-                    font-weight: bold;
-                }
+            table th {
+                background-color: #F7F7F7;
+                color: #333;
+                font-weight: bold;
+            }
 
-                table th, table td {
-                    padding: 5px;
-                    border: 1px solid #ccc;
-                }
+            table th, table td {
+                padding: 5px;
+                border: 1px solid #ccc;
+            }
 
-                #result-container {
-                    width: 100%;
-                }
-                .result {
-                    width: fit-content;
-                    float: left;
-                    border: 1px solid black;
-                    margin: 5px;
-                    padding: 5px;
-                }
-            </style>
+            #result-container {
+                width: 100%;
+            }
+            .result {
+                width: fit-content;
+                float: left;
+                border: 1px solid black;
+                margin: 5px;
+                padding: 5px;
+            }
+        </style>
 
-            <script>
-                function checkedOnlyCheckbox(id) {
-                    var checkbox = document.getElementsByTagName("input");
-                    for (let i = 0; i < checkbox.length; i++) {
-                        if (checkbox[i].type === "checkbox") {
-                            if (checkbox[i].id !== id) {
-                                checkbox[i].checked = false;
-                            }
+        <script>
+            function checkedOnlyCheckbox(id, clazz) {
+                var checkbox = document.getElementsByClassName(clazz);
+                for (let i = 0; i < checkbox.length; i++) {
+                    if (checkbox[i].type === "checkbox") {
+                        if (checkbox[i].id !== id) {
+                            checkbox[i].checked = false;
                         }
                     }
                 }
-            </script>
+            }
+        </script>
     </head>
     <body onload="init()">
         <input type="file" id="fileUpload" />
-        <input type="button" id="upload" value="submit" onclick="upload()" />
+        <input type="button" id="upload" value="submit" onclick="upload()" /> <br/>
 
-        <input type="checkbox" id="downloadFile" value="1" onclick="checkedOnlyCheckbox(this.id)" />
+        <label>Main Function: </label>
+        <input type="checkbox" id="downloadFile" class="main_function" value="1" checked="true" onclick="checkedOnlyCheckbox(this.id, this.className)" />
         <label for="downloadFile">download java file</label>
 
-        <input type="checkbox" id="makeInsertStatement" value="2" onclick="checkedOnlyCheckbox(this.id)"/>
-        <label for="makeInsertStatement">make insert statement</label>
+        <input type="checkbox" id="makeInsertStatement" class="main_function" value="2" onclick="checkedOnlyCheckbox(this.id, this.className)"/>
+        <label for="makeInsertStatement">make insert statement</label> <br/>
+
+        <label>Optional: </label>
+        <input type="checkbox" id="autoPrefix" class="sub_function" value="0" />
+        <label for="autoPrefix">auto prefix</label>
+        <input type="checkbox" id="truncated" class="sub_function" value="1" />
+        <label for="truncated">truncate String</label>
         <hr />
         <div id="result-container">
         </div>    
