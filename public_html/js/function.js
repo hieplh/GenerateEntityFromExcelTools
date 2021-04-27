@@ -1,5 +1,3 @@
-var archive = new JSZip();
-
 function upload() {
     var fileUpload = validateExcelFile();
     if (fileUpload === null) {
@@ -95,38 +93,47 @@ function validateExcelFile() {
     return fileUpload;
 }
 
-function getTypeCheckbox() {
-    var checkbox = document.getElementsByTagName("input");
-    for (let i = 0; i < checkbox.length; i++) {
-        if (checkbox[i].type === "checkbox") {
-            if (checkbox[i].checked) {
-                return checkbox[i].value;
-            }
+function checkSingleMandatoryField(data, field, pos) {
+    let error = "";
+    try {
+        if (data !== field) {
+            error += "Missing " + field + " field at " + pos + "\n";
         }
+    } catch (err) {
+        error += "Missing " + field + " field at " + pos + "\n";
     }
-    return DEFINATION_TYPE.Generate;
+    return error;
 }
 
-function addAdditionalImport(typeJava) {
+function checkPrefix(value, prefix) {
+    if (prefix) {
+        value.unshift(prefix);
+    }
+    return value;
+}
+
+function addAdditionalImport(sourceImport, typeJava) {
     if (javaLib[typeJava]) {
-        return "import " + javaLib[typeJava] + getSemicolon() + "\n";
+        if (!sourceImport.includes(javaLib[typeJava])) {
+            return "import " + javaLib[typeJava] + getSemicolon() + "\n";
+        }
     }
     return "";
 }
 
-function getTypeJava(inputType) {
-    let output;
-    if (!inputType) {
-        return "String";
-    }
+function importExcel(data, sheetname) {
+//Read the Excel File data.
+    let workbook = XLSX.read(data, {
+        type: 'binary'
+    });
+    //Fetch the name of First Sheet.
 
-    if (javaType[inputType.toLowerCase()]) {
-        output = javaType[inputType.toLowerCase()];
-    } else {
-        output = inputType;
+    // get sheet name of gen entity
+    let result = sheetname;
+    if (result === "undefined") {
+        result = workbook.SheetNames[0];
     }
-    addAdditionalImport(output);
-    return output;
+    return workbook.Sheets[result];
 }
 
 function readExcelFile(file, type) {
@@ -184,33 +191,6 @@ function readExcelFile(file, type) {
     }
 }
 
-function importExcel(data, sheetname) {
-//Read the Excel File data.
-    let workbook = XLSX.read(data, {
-        type: 'binary'
-    });
-    //Fetch the name of First Sheet.
-
-    // get sheet name of gen entity
-    let result = sheetname;
-    if (result === "undefined") {
-        result = workbook.SheetNames[0];
-    }
-    return workbook.Sheets[result];
-}
-
-function checkSingleMandatoryField(data, field, pos) {
-    let error = "";
-    try {
-        if (data !== field) {
-            error += "Missing " + field + " field at " + pos + "\n";
-        }
-    } catch (err) {
-        error += "Missing " + field + " field at " + pos + "\n";
-    }
-    return error;
-}
-
 function isHaveMandatoryFields(data) {
     let excel = importExcel(data, DEFINATION_SHEET_NAME.GEN_ENTITY);
     let error = "";
@@ -218,14 +198,15 @@ function isHaveMandatoryFields(data) {
     error += checkSingleMandatoryField(excel.A1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_TABLE, "A1");
     error += checkSingleMandatoryField(excel.B1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_COLUMN, "B1");
     error += checkSingleMandatoryField(excel.C1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PACKAGE, "C1");
-    error += checkSingleMandatoryField(excel.D1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS, "D1");
-    error += checkSingleMandatoryField(excel.E1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_ATTRIBUTE, "E1");
-    error += checkSingleMandatoryField(excel.F1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE, "F1");
-    error += checkSingleMandatoryField(excel.G1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PREFIX, "G1");
-    error += checkSingleMandatoryField(excel.H1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE, "H1");
-    error += checkSingleMandatoryField(excel.I1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY, "I1");
-    error += checkSingleMandatoryField(excel.J1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.AUTHOR, "J1");
-    error += checkSingleMandatoryField(excel.K1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.COMMENT, "K1");
+    error += checkSingleMandatoryField(excel.D1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PACKAGE_KEY, "D1");
+    error += checkSingleMandatoryField(excel.E1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS, "E1");
+    error += checkSingleMandatoryField(excel.F1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_ATTRIBUTE, "F1");
+    error += checkSingleMandatoryField(excel.G1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE, "G1");
+    error += checkSingleMandatoryField(excel.H1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PREFIX, "H1");
+    error += checkSingleMandatoryField(excel.I1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.NULLABLE, "I1");
+    error += checkSingleMandatoryField(excel.J1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY, "J1");
+    error += checkSingleMandatoryField(excel.K1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.AUTHOR, "K1");
+    error += checkSingleMandatoryField(excel.L1.v, DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.COMMENT, "L1");
     if (error) {
         alert(error);
         return false;
@@ -241,17 +222,19 @@ function isEndTable(data, startPos, endPos) {
 }
 
 function isPrimaryKey(data, startPos, endPos, isTheLastTable) {
+    let indexes = [];
+    let count = -1;
     let lengh = isTheLastTable ? endPos + 1 : endPos;
     for (var i = startPos; i < lengh; i++) {
         if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY]) {
             if (data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY].toString().toLowerCase() === "true" ||
                     data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY] === 1 ||
                     data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PRIMARY_KEY].toString().toLowerCase() === "yes") {
-                return true;
+                indexes[++count] = i;
             }
         }
     }
-    return false;
+    return indexes;
 }
 
 function makeCreateClassTemplate(tableName, data) {
@@ -277,7 +260,12 @@ function makeRawClass(data, startPos, endPos, isTheLastTable) {
 
     package = getPackage(data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PACKAGE]);
 
-    importLib = getCommonImport() + getNewLine();
+    importLib = getPersistenceImport() +
+            getNewLine() +
+            getJsonObjectImport() +
+            getNewLine() +
+            getLombokImport() +
+            getNewLine();
 
     comment = getCommentJapanese(
             splitandCamelCaseString(data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/),
@@ -292,7 +280,7 @@ function makeRawClass(data, startPos, endPos, isTheLastTable) {
 
     classContent += getInitClass();
     classContent += splitandCamelCaseString(data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/);
-    classContent += getImplSeriable();
+    classContent += getExtendJsonObject();
     classContent += " " + getLeftBraces();
     classContent += getNewLine() + getNewLine();
 
@@ -326,7 +314,7 @@ function makeRawClass(data, startPos, endPos, isTheLastTable) {
         let javaType = data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE] !== "undefined" ?
                 data[i][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_TYPE] : "String";
         javaType = getTypeJava(javaType);
-        importLib += addAdditionalImport(javaType);
+        importLib += addAdditionalImport(importLib, javaType);
 
         classContent += javaType + " ";
         classContent += splitandCamelCaseString(
@@ -349,12 +337,15 @@ function makeRawKeyClass(data, indexes, isTheLastTable) {
     let annotation = "";
     let classContent = "";
 
-    package = getPackage(data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PACKAGE]);
+    package = getPackage(data[indexes[0]][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.PACKAGE]);
 
-    importLib = getCommonImport() + getNewLine();
+    importLib = getSerializableImport() +
+            getNewLine() +
+            getLombokImport() +
+            getNewLine();
 
     comment = getCommentJapanese(
-            splitandCamelCaseString(data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/),
+            splitandCamelCaseString(data[indexes[0]][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/),
             data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.DB_TABLE],
             data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.AUTHOR],
             data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.COMMENT]);
@@ -366,7 +357,7 @@ function makeRawKeyClass(data, indexes, isTheLastTable) {
 
     classContent += getInitClass();
     classContent += splitandCamelCaseString(data[startPos][DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS.JAVA_CLASS], "", /[_ ]+/);
-    classContent += getImplSeriable();
+    classContent += getExtendJsonObject();
     classContent += " " + getLeftBraces();
     classContent += getNewLine() + getNewLine();
 
@@ -414,7 +405,7 @@ function makeRawKeyClass(data, indexes, isTheLastTable) {
     classContent += getRightBraces();
 
     indexes.forEach(function (index) {
-
+        data[index]
     });
 
     return package + "\n" + importLib + "\n" + comment + annotation + classContent;
@@ -496,15 +487,25 @@ function getPackage(packageName) {
     return "package " + packageName + getSemicolon() + "\n";
 }
 
-function getCommonImport() {
-    return "import javax.persistence.Column;\n" +
-            "import javax.persistence.Entity;\n" +
-            "import javax.persistence.Id;\n" +
-            "import javax.persistence.Table;\n\n" +
-            "import jp.linkst.util2.lang.JsonObject;\n\n" +
-            "import lombok.AllArgsConstructor;\n" +
+function getJsonObjectImport() {
+    return "import jp.linkst.util2.lang.JsonObject;\n";
+}
+
+function getSerializableImport() {
+    return "import java.io.Serializable;\n";
+}
+
+function getLombokImport() {
+    return  "import lombok.AllArgsConstructor;\n" +
             "import lombok.Data;\n" +
             "import lombok.NoArgsConstructor;\n";
+}
+
+function getPersistenceImport() {
+    return  "import javax.persistence.Column;\n" +
+            "import javax.persistence.Entity;\n" +
+            "import javax.persistence.Id;\n" +
+            "import javax.persistence.Table;\n";
 }
 
 function getInitClass() {
@@ -535,8 +536,12 @@ function getColumnAnnotation() {
     return "@Column(name = ";
 }
 
-function getImplSeriable() {
+function getExtendJsonObject() {
     return " extends JsonObject";
+}
+
+function getImplSerializable() {
+    return " implements Serializable";
 }
 
 function getJavaClassType() {
@@ -567,15 +572,35 @@ function getCommentJapanese(javaClass, dbTable, author, comment) {
     return  result;
 }
 
-function upperCaseString(value) {
-    return value.substring(0, 1).toUpperCase() + value.substring(1);
+function getTypeCheckbox() {
+    var checkbox = document.getElementsByTagName("input");
+    for (let i = 0; i < checkbox.length; i++) {
+        if (checkbox[i].type === "checkbox") {
+            if (checkbox[i].checked) {
+                return checkbox[i].value;
+            }
+        }
+    }
+    return DEFINATION_TYPE.Generate;
 }
 
-function checkPrefix(value, prefix) {
-    if (prefix) {
-        value.unshift(prefix);
+function getTypeJava(inputType) {
+    let output;
+    if (!inputType) {
+        return "String";
     }
-    return value;
+
+    if (javaType[inputType.toLowerCase()]) {
+        output = javaType[inputType.toLowerCase()];
+    } else {
+        output = inputType;
+    }
+    addAdditionalImport(output);
+    return output;
+}
+
+function upperCaseString(value) {
+    return value.substring(0, 1).toUpperCase() + value.substring(1);
 }
 
 function splitandCamelCaseString(value, prefix, delimiter) {

@@ -1,5 +1,6 @@
 var javaType = [];
 var javaLib = [];
+const archive = new JSZip();
 
 const DEFINATION_TYPE = {
     "Generate": 0,
@@ -13,6 +14,7 @@ const DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS = {
     "DB_TABLE": "Database Table Name",
     "DB_COLUMN": "Field Column Name",
     "PACKAGE": "Package",
+    "PACKAGE_KEY": "Package Key",
     "JAVA_CLASS": "Java Class Name",
     "JAVA_ATTRIBUTE": "Java Attribute Name",
     "JAVA_TYPE": "Data Type",
