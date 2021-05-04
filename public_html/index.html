@@ -47,7 +47,7 @@
 
         <script>
             function checkedOnlyCheckbox(id, clazz) {
-                var checkbox = document.getElementsByClassName(clazz);
+                let checkbox = document.getElementsByClassName(clazz);
                 for (let i = 0; i < checkbox.length; i++) {
                     if (checkbox[i].type === "checkbox") {
                         if (checkbox[i].id !== id) {
@@ -56,23 +56,47 @@
                     }
                 }
             }
+
+            function onloadFileName() {
+                let file = document.getElementById("fileUpload");
+                let filename = file.value.replace(/^.*[\\\/]/, '');
+                filename = filename.replace(new RegExp(".xls|.xlsx"), '');
+                document.getElementById("filename").value = filename;
+            }
         </script>
     </head>
     <body onload="init()">
-        <input type="file" id="fileUpload" />
-        <input type="button" id="upload" value="submit" onclick="upload()" /> <br/>
+        <input type="file" id="fileUpload" onchange="onloadFileName()" />
+        <input type="button" id="upload" value="submit" onclick="upload()" /> &nbsp;&nbsp;
+        <label>export file name</label>
+        <input type="text" id="filename" size="50"/>
+        <br/>
 
         <label>Main Function: </label>
-        <input type="checkbox" id="downloadFile" class="main_function" value="1" checked="true" onclick="checkedOnlyCheckbox(this.id, this.className)" />
-        <label for="downloadFile">download java file</label>
+        <input type="checkbox" id="genEntity" class="main_function" value="1" />
+        <label for="genEntity">gen entity class</label>
 
-        <input type="checkbox" id="makeInsertStatement" class="main_function" value="2" onclick="checkedOnlyCheckbox(this.id, this.className)"/>
+        <input type="checkbox" id="genRepository" class="main_function" value="2" />
+        <label for="genRepository">gen repository class</label>
+
+        <input type="checkbox" id="genService" class="main_function" value="3" />
+        <label for="genService">gen service class</label>
+
+        <input type="checkbox" id="makeInsertStatement" class="main_function" value="4" />
         <label for="makeInsertStatement">make insert statement</label> <br/>
 
+        <label>Sub Function: </label>
+        <input type="checkbox" id="displayRawData" class="sub_function" value="0" />
+        <label for="displayRawData">display raw data</label>
+
+        <input type="checkbox" id="downloadFile" class="sub_function" value="1" checked="true" />
+        <label for="downloadFile">download java file</label> <br/>
+
         <label>Optional: </label>
-        <input type="checkbox" id="autoPrefix" class="sub_function" value="0" />
+        <input type="checkbox" id="autoPrefix" class="optional_function" value="0" />
         <label for="autoPrefix">auto prefix</label>
-        <input type="checkbox" id="truncated" class="sub_function" value="1" />
+
+        <input type="checkbox" id="truncated" class="optional_function" value="1" />
         <label for="truncated">truncate String</label>
         <hr />
         <div id="result-container">

@@ -2,22 +2,26 @@ var javaType = [];
 var javaLib = [];
 var truncated;
 var numKeyToGenKeyClass;
-const archive = new JSZip();
+var archive;
 
-const DEFINATION_TYPE = {
-    "Generate": 0,
-    "Download": 1,
-    "Insert": 2,
-    "Update": 3,
-    "Delete": 4
+const DEFINATION_TYPE_MAIN = {
+    "ENTITY" : 1,
+    "REPOSITORY": 2,
+    "SERVICE": 3,
+    "INSERT": 4
 };
 
 const DEFINATION_TYPE_SUB = {
+    "DISPLAY_RAW_DATA": 0,
+    "DOWNLOAD_FILE": 1
+};
+
+const DEFINATION_TYPE_OPTIONAL = {
     "AUTO_PREFIX": 0,
     "TRUNCATED": 1
 };
 
-const DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS = {
+const DEFINATION_COLUMN_EXCEL_FILE = {
     "DB_TABLE": "Database Table Name",
     "DB_COLUMN": "Field Column Name",
     "PACKAGE": "Package",
@@ -34,16 +38,20 @@ const DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS = {
     "TO": "To",
     "LIBRARY": "Library",
     "TRUNCATED": "Truncated Num",
-    "NUM_TO_GEN_KEY": "Num of PK to Gen Key Class"
+    "NUM_TO_GEN_KEY": "Num of PK to Gen Key Class",
+    "PACKAGE_REPOSITORY": "Package Repository",
+    "REPOSITORY": "Repository",
+    "PACKAGE_SERVICE": "Package Service",
+    "SERVICE": "Service"
 };
 
 const DEFINATION_SHEET_NAME = {
     "GEN_ENTITY": "GenEntity",
-    "JAVA_TYPE_MAPPING": "DataTypeMapping"
+    "CONFIG": "Config"
 };
 
 function init() {
-    Object.freeze(DEFINATION_TYPE);
-    Object.freeze(DEFINATION_COLUMN_GEN_ENTITY_JAVA_CLASS);
-    Object.freeze(DEFINATION_TYPE_SUB);
+    Object.freeze(DEFINATION_TYPE_MAIN);
+    Object.freeze(DEFINATION_COLUMN_EXCEL_FILE);
+    Object.freeze(DEFINATION_TYPE_OPTIONAL);
 }
