@@ -60,7 +60,9 @@
     </head>
     <body onload="init()">
         <input type="file" id="fileUpload" />
-        <input type="button" id="upload" value="submit" onclick="upload()" /> <br/>
+        <input type="button" id="upload" value="submit" onclick="countTimeExecution()" /> &nbsp;
+        <label id="count_time">18:00</label>
+        <br/>
 
         <label>Main Function: </label>
         <input type="checkbox" id="downloadFile" class="main_function" value="1" checked="true" onclick="checkedOnlyCheckbox(this.id, this.className)" />

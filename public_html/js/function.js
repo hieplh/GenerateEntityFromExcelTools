@@ -1,4 +1,12 @@
+function countTimeExecution() {
+    let date = new Date();
+    document.getElementById("count_time").innerHTML = date.now().toString();
+}
+
 function upload() {
+    let t0 = performance.now();
+    console.log(t0);
+    
     var fileUpload = validateExcelFile();
     if (fileUpload === null) {
         return;
@@ -7,6 +15,9 @@ function upload() {
     let type = getTypeCheckbox();
     let optional = getTypeOptional();
     readExcelFile(fileUpload, type, optional);
+    
+    let t1 = performance.now();
+    console.log(t1);
 }
 
 function compressFile(filename, data) {
