@@ -3,6 +3,9 @@ var javaLib = [];
 var truncated;
 var numKeyToGenKeyClass;
 var archive;
+var mapClassPackage;
+var mapKeyClassPackage;
+var sampleData;
 
 const DEFINATION_TYPE_MAIN = {
     "ENTITY" : 1,
@@ -39,14 +42,16 @@ const DEFINATION_COLUMN_EXCEL_FILE = {
     "LIBRARY": "Library",
     "TRUNCATED": "Truncated Num",
     "NUM_TO_GEN_KEY": "Num of PK to Gen Key Class",
-    "PACKAGE_REPOSITORY": "Package Repository",
-    "REPOSITORY": "Repository",
+    "CLASS_OF_REPO": "Object Class",
+    "KEY_CLASS_OF_REPO": "Object Key Class",
     "PACKAGE_SERVICE": "Package Service",
     "SERVICE": "Service"
 };
 
 const DEFINATION_SHEET_NAME = {
     "GEN_ENTITY": "GenEntity",
+    "GEN_REPOSITORY": "GenRepo",
+    "GEN_SERVICE": "GenService",
     "CONFIG": "Config"
 };
 
