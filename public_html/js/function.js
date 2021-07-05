@@ -504,10 +504,12 @@ function makeRawEntity(data, startPos, endPos, isTheLastTable, optional, numKey)
         if (!isKey) {
             if (data[i][DEFINATION_COLUMN_EXCEL_FILE.NULLABLE]) {
                 if (data[i][DEFINATION_COLUMN_EXCEL_FILE.NULLABLE].toString().toLowerCase() === "false" ||
-                        data[i][DEFINATION_COLUMN_EXCEL_FILE.NULLABLE] === 0 ||
+                        data[i][DEFINATION_COLUMN_EXCEL_FILE.NULLABLE] == 0 ||
                         data[i][DEFINATION_COLUMN_EXCEL_FILE.NULLABLE].toString().toLowerCase() === "no") {
                     classContent += ", nullable = false";
                 }
+            } else {
+                classContent += ", nullable = false";
             }
         }
 
