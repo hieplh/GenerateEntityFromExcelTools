@@ -8,7 +8,7 @@ async function upload() {
 //    let t0 = performance.now();
 //    console.log(t0);
     sampleData = [];
-    sampleData = (await readTextFile("sampleEntity.txt")).split("\r\n");
+//    sampleData = (await readTextFile("sampleEntity.txt")).split("\r\n");
     var fileUpload = validateExcelFile();
     if (fileUpload === null) {
         return;
@@ -31,6 +31,9 @@ function compressFile(filename, data, type) {
     switch (type) {
         case DEFINATION_TYPE_MAIN.ENTITY:
             archive.folder("entity").file(filename + getJavaClassType(), data);
+            break;
+        case DEFINATION_TYPE_MAIN.ENTITY_KEY:
+            archive.folder("entity_key").file(filename + getJavaClassType(), data);
             break;
         case DEFINATION_TYPE_MAIN.REPOSITORY:
             archive.folder("repository").file(filename + getJavaClassType(), data);
@@ -209,15 +212,16 @@ function readExcelFile(file, typeMain, typeSub, typeOptional) {
                         if (!validateJavaType(e.target.result)) {
                             return;
                         }
+                        break;
                     case DEFINATION_TYPE_MAIN.REPOSITORY:
                         if (!isHasMandatoryFieldRepo(e.target.result)) {
                             return;
                         }
-
+                        break;
                     case DEFINATION_TYPE_MAIN.SERVICE:
-                        break;
+                        return;
                     default :
-                        break;
+                        return;
                 }
             }
 
@@ -455,8 +459,7 @@ function makeRawEntity(data, startPos, endPos, isTheLastTable, optional, numKey)
             getNewLine() +
             getPersistenceImport();
 
-    comment = getNewLine();
-    comment += getCommentJapanese(
+    comment = getCommentJapanese(
             upperCaseCamel(data[startPos][DEFINATION_COLUMN_EXCEL_FILE.JAVA_CLASS]),
             data[startPos][DEFINATION_COLUMN_EXCEL_FILE.DB_TABLE],
             data[startPos][DEFINATION_COLUMN_EXCEL_FILE.AUTHOR],
@@ -474,6 +477,14 @@ function makeRawEntity(data, startPos, endPos, isTheLastTable, optional, numKey)
 
     let lengh = isTheLastTable ? endPos + 1 : endPos;
     for (var i = startPos; i < lengh; i++) {
+        if (data[i][DEFINATION_COLUMN_EXCEL_FILE.COMMENT_ON_ATTRIBUTE]) {
+            classContent += getTab();
+            classContent +=  "/* ";
+            classContent += data[i][DEFINATION_COLUMN_EXCEL_FILE.COMMENT_ON_ATTRIBUTE];
+            classContent +=  " */";
+            classContent += getNewLine();
+        }
+        
         let isKey = false;
         if (data[i][DEFINATION_COLUMN_EXCEL_FILE.PRIMARY_KEY]) {
             if (data[i][DEFINATION_COLUMN_EXCEL_FILE.PRIMARY_KEY].toString().toLowerCase() === "true" ||
@@ -492,10 +503,10 @@ function makeRawEntity(data, startPos, endPos, isTheLastTable, optional, numKey)
         classContent += getQuotes() + data[i][DEFINATION_COLUMN_EXCEL_FILE.DB_COLUMN] + getQuotes();
         if (!isKey) {
             if (data[i][DEFINATION_COLUMN_EXCEL_FILE.NULLABLE]) {
-                if (data[i][DEFINATION_COLUMN_EXCEL_FILE.NULLABLE].toString().toLowerCase() === "true" ||
-                        data[i][DEFINATION_COLUMN_EXCEL_FILE.NULLABLE] === 1 ||
-                        data[i][DEFINATION_COLUMN_EXCEL_FILE.NULLABLE].toString().toLowerCase() === "yes") {
-                    classContent += ", nullable = true";
+                if (data[i][DEFINATION_COLUMN_EXCEL_FILE.NULLABLE].toString().toLowerCase() === "false" ||
+                        data[i][DEFINATION_COLUMN_EXCEL_FILE.NULLABLE] === 0 ||
+                        data[i][DEFINATION_COLUMN_EXCEL_FILE.NULLABLE].toString().toLowerCase() === "no") {
+                    classContent += ", nullable = false";
                 }
             }
         }
@@ -648,7 +659,7 @@ function processGenEntity(data, isDownload, optional) {
                 if (isDownload) {
                     compressFile(splitandCamelCaseString(excelRows[startPos][DEFINATION_COLUMN_EXCEL_FILE.JAVA_CLASS], "", /[_ ]+/), rawClass, DEFINATION_TYPE_MAIN.ENTITY);
                     if (numKeyToGenKeyClass > 0 && numKey.num >= numKeyToGenKeyClass) {
-                        compressFile(splitandCamelCaseString(excelRows[startPos][DEFINATION_COLUMN_EXCEL_FILE.JAVA_CLASS] + "Key", "", /[_ ]+/), rawKeyClass, DEFINATION_TYPE_MAIN.ENTITY);
+                        compressFile(splitandCamelCaseString(excelRows[startPos][DEFINATION_COLUMN_EXCEL_FILE.JAVA_CLASS] + "Key", "", /[_ ]+/), rawKeyClass, DEFINATION_TYPE_MAIN.ENTITY_KEY);
                     }
                 }
 

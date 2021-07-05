@@ -11,7 +11,8 @@ const DEFINATION_TYPE_MAIN = {
     "ENTITY" : 1,
     "REPOSITORY": 2,
     "SERVICE": 3,
-    "INSERT": 4
+    "INSERT": 4,
+    "ENTITY_KEY": 5
 };
 
 const DEFINATION_TYPE_SUB = {
@@ -37,6 +38,7 @@ const DEFINATION_COLUMN_EXCEL_FILE = {
     "PRIMARY_KEY": "Primary Key",
     "AUTHOR": "Author",
     "COMMENT": "Comment",
+    "COMMENT_ON_ATTRIBUTE": "Comment on Attribute",
     "FROM": "From",
     "TO": "To",
     "LIBRARY": "Library",
